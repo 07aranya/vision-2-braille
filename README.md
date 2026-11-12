@@ -16,8 +16,9 @@ Vision2Braille/
 │   └── confusion_matrix.png      # Stratified 80/20 test confusion matrix
 ├── recognition/
 │   ├── features.py               # Shared feature extraction, confidence gating & Braille drawing
-│   ├── live_recognize.py         # Real-time single-letter gesture recognition
-│   ├── word_builder.py           # OpenCV word composer (hands-free auto-add + ESP32/sim output)
+│   ├── live_recognize.py         # Real-time single-letter gesture recognition (with voice readout)
+│   ├── tts.py                    # Non-blocking Text-to-Speech audio feedback engine
+│   ├── word_builder.py           # OpenCV word composer (hands-free auto-add + voice + ESP32/sim)
 │   └── braille_serial.py         # Non-blocking USB Serial client for the ESP32
 ├── dashboard/
 │   ├── app.py                    # Local Flask web dashboard with live Braille visualizer
@@ -83,5 +84,6 @@ Optional flags:
 - `--baud 115200` — serial baud rate (default: `115200`)
 - `--simulate` — force non-blocking simulation without serial hardware
 - `--auto-add` — enable hands-free hold-to-confirm mode on startup
+- `--no-tts` — disable spoken voice feedback
 
-**Controls:** `SPACE` add letter · `ENTER` add space · `BACKSPACE` undo · `A` toggle auto-add · `S` send word · `T` test dots 1..6 · `X` stop · `C` clear · `Q`/`ESC` quit
+**Controls:** `SPACE` add letter · `ENTER` add space · `BACKSPACE` undo · `A` toggle auto-add · `V` toggle voice TTS · `S` send word · `T` test dots 1..6 · `X` stop · `C` clear · `Q`/`ESC` quit

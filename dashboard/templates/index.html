@@ -682,7 +682,8 @@
         <span id="hw-led" class="dot-led"></span>
         <span id="hw-status-text">Checking ESP32...</span>
       </div>
-      <button id="btn-sound" type="button">Sound: OFF</button>
+      <button id="btn-sound" type="button" title="Mechanical click sounds on solenoid pulse">Sound FX: OFF</button>
+      <button id="btn-tts" type="button" class="active-toggle" title="Spoken letter and word readout (Web Speech API)">Voice TTS: ON</button>
       <button id="btn-open-ref" type="button">Alphabet &amp; Model Status</button>
     </div>
   </header>
@@ -839,6 +840,7 @@
     <span><kbd>Enter</kbd> Add Space</span>
     <span><kbd>Backspace</kbd> Undo</span>
     <span><kbd>A</kbd> Auto-Add</span>
+    <span><kbd>V</kbd> Voice TTS</span>
     <span><kbd>S</kbd> Send Word</span>
     <span><kbd>T</kbd> Pulse Test</span>
     <span><kbd>X</kbd> Stop</span>
@@ -872,8 +874,12 @@
 
     const el = id => document.getElementById(id);
     let soundEnabled = false;
+    let ttsEnabled = true;
     let audioCtx = null;
     let prevCellKey = "";
+    let prevWord = "";
+    let prevRenderingWord = "";
+    let isFirstPoll = true;
 
     function dotsToUnicode(dots) {
       let mask = 0;
@@ -881,6 +887,19 @@
         if (d >= 1 && d <= 6) mask |= (1 << (d - 1));
       }
       return String.fromCharCode(0x2800 + mask);
+    }
+
+    function speakText(text, cancelPrior = false) {
+      if (!ttsEnabled || !text || !('speechSynthesis' in window)) return;
+      try {
+        if (cancelPrior) {
+          window.speechSynthesis.cancel();
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } catch (_) {}
     }
 
     function playClick(freq = 540) {
@@ -917,7 +936,10 @@
     el("btn-add").onclick = () => post("/api/word/add");
     el("btn-space").onclick = () => post("/api/word/space");
     el("btn-backspace").onclick = () => post("/api/word/backspace");
-    el("btn-clear").onclick = () => post("/api/word/clear");
+    el("btn-clear").onclick = () => {
+      post("/api/word/clear");
+      speakText("cleared");
+    };
     el("btn-auto").onclick = () => post("/api/auto_add");
     el("btn-send").onclick = () => post("/api/word/send");
     el("btn-send-custom").onclick = () => {
@@ -935,9 +957,20 @@
 
     el("btn-sound").onclick = () => {
       soundEnabled = !soundEnabled;
-      el("btn-sound").innerText = soundEnabled ? "Sound: ON" : "Sound: OFF";
+      el("btn-sound").innerText = soundEnabled ? "Sound FX: ON" : "Sound FX: OFF";
       el("btn-sound").className = soundEnabled ? "active-toggle" : "";
       if (soundEnabled) playClick(660);
+    };
+
+    el("btn-tts").onclick = () => {
+      ttsEnabled = !ttsEnabled;
+      el("btn-tts").innerText = ttsEnabled ? "Voice TTS: ON" : "Voice TTS: OFF";
+      el("btn-tts").className = ttsEnabled ? "active-toggle" : "";
+      if (ttsEnabled) {
+        speakText("voice on");
+      } else if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     };
 
     el("btn-open-ref").onclick = () => el("ref-modal").classList.add("open");
@@ -958,6 +991,7 @@
       else if (e.code === "Enter") { e.preventDefault(); post("/api/word/space"); }
       else if (e.code === "Backspace") { e.preventDefault(); post("/api/word/backspace"); }
       else if (e.key === "a" || e.key === "A") post("/api/auto_add");
+      else if (e.key === "v" || e.key === "V") el("btn-tts").click();
       else if (e.key === "s" || e.key === "S") post("/api/word/send");
       else if (e.key === "t" || e.key === "T") post("/api/hardware/test");
       else if (e.key === "x" || e.key === "X") post("/api/hardware/stop");
@@ -1111,6 +1145,30 @@
 
         // Word & Sequence
         renderWordTiles(s.word, s.rendering_word, s.rendering_idx);
+
+        // Spoken audio feedback for letters and words
+        if (isFirstPoll) {
+          prevWord = s.word || "";
+          prevRenderingWord = s.rendering_word || "";
+          isFirstPoll = false;
+        } else {
+          if (s.word !== prevWord) {
+            if (s.word && s.word.length > prevWord.length && s.word.startsWith(prevWord)) {
+              const added = s.word.slice(prevWord.length);
+              speakText(added === " " ? "space" : added);
+            } else if (s.word && s.word.length < prevWord.length && prevWord.startsWith(s.word)) {
+              speakText("undo");
+            }
+            prevWord = s.word || "";
+          }
+
+          if (s.rendering_word && s.rendering_word !== prevRenderingWord) {
+            speakText(s.rendering_word, true);
+            prevRenderingWord = s.rendering_word;
+          } else if (!s.rendering_word) {
+            prevRenderingWord = "";
+          }
+        }
 
         // Solenoid Braille Cell
         const activeDots = s.active_dots || [];

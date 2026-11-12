@@ -11,6 +11,7 @@ import mediapipe as mp
 sys.path.insert(0, os.path.dirname(__file__))
 from braille_serial import BrailleSerialClient, DEFAULT_BAUD
 from features import BRAILLE_PATTERNS, draw_braille_cell, extract_features, predict_gesture
+from tts import TTSPlayer
 
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
@@ -94,6 +95,8 @@ def parse_args():
     parser.add_argument("--baud", type=int, default=DEFAULT_BAUD, help="Serial baud rate (default: 115200).")
     parser.add_argument("--simulate", action="store_true", help="Force console simulation without serial hardware.")
     parser.add_argument("--auto-add", action="store_true", help="Enable hands-free auto-add mode on startup.")
+    parser.add_argument("--no-tts", action="store_true", help="Disable spoken voice feedback (Text-to-Speech).")
+    parser.add_argument("--tts-rate", type=int, default=175, help="TTS speech rate in WPM (default: 175).")
     return parser.parse_args()
 
 
@@ -101,6 +104,7 @@ def main():
     args = parse_args()
     serial_client = BrailleSerialClient(baud=args.baud)
     simulator = BrailleSimulator()
+    tts = TTSPlayer(enabled=not args.no_tts, rate=args.tts_rate)
 
     if args.simulate:
         serial_client.status_text = "Simulation mode (--simulate)"
@@ -128,6 +132,7 @@ def main():
     print("  [ENTER]     = add space between words")
     print("  [BACKSPACE] = remove last character")
     print("  [A]         = toggle hands-free auto-add mode")
+    print("  [V]         = toggle spoken voice feedback (TTS)")
     print("  [S]         = send word to ESP32 Braille cell (or simulator)")
     print("  [T]         = test dots 1..6 sequentially (ESP32 only)")
     print("  [X]         = stop / release solenoids immediately")
@@ -179,6 +184,7 @@ def main():
                         word_buffer.append(ch)
                     last_auto_added = candidate_letter
                     candidate_start_time = time.monotonic()  # reset timer
+                    tts.speak_letter(candidate_letter)
                     print(f"[AUTO-ADD] Added '{candidate_letter}' -> word: {''.join(word_buffer)}")
 
             # --- Visual Overlays ---
@@ -190,8 +196,9 @@ def main():
                         (10, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 255, 0), 2)
             cv2.putText(frame, f"Word: {word_display}", (10, 72),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 200, 0), 2)
-            cv2.putText(frame, f"HW: {serial_client.status_text}", (10, 102),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.58, hw_color, 2)
+            tts_status = "ON" if tts.enabled else "OFF"
+            cv2.putText(frame, f"HW: {serial_client.status_text}  |  Voice (V): {tts_status}", (10, 102),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.54, hw_color, 2)
 
             # Auto-add progress bar
             if auto_add_enabled:
@@ -207,8 +214,8 @@ def main():
             draw_braille_cell(frame, active_cell_letter, x=15, y=148, title=cell_title)
 
             # Bottom helper bar
-            cv2.putText(frame, "SPACE=add  ENTER=space  BKSP=undo  A=auto  S=send  T=test  C=clear  Q=quit",
-                        (10, frame.shape[0] - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.44, (210, 210, 210), 1)
+            cv2.putText(frame, "SPACE=add  ENTER=space  BKSP=undo  A=auto  V=voice  S=send  T=test  C=clear  Q=quit",
+                        (10, frame.shape[0] - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (210, 210, 210), 1)
 
             cv2.imshow("Vision2Braille - Word Builder", frame)
             key = cv2.waitKey(1) & 0xFF
@@ -219,20 +226,29 @@ def main():
                 if candidate_letter:
                     for ch in candidate_letter:
                         word_buffer.append(ch)
+                    tts.speak_letter(candidate_letter)
                     print(f"Added '{candidate_letter}' -> word so far: {''.join(word_buffer)}")
             elif key in (10, 13):  # ENTER -> add space
                 word_buffer.append(' ')
+                tts.say("space")
                 print(f"Added space -> word so far: '{''.join(word_buffer)}'")
             elif key == 8:   # BACKSPACE
                 if word_buffer:
                     removed = word_buffer.pop()
+                    tts.say("undo")
                     print(f"Removed '{removed}' -> word so far: {''.join(word_buffer)}")
             elif key == ord('a'):
                 auto_add_enabled = not auto_add_enabled
                 candidate_start_time = None
                 print(f"Hands-free Auto-Add mode: {'ON' if auto_add_enabled else 'OFF'}")
+            elif key == ord('v'):
+                is_on = tts.toggle()
+                print(f"Voice TTS: {'ON' if is_on else 'OFF'}")
+                if is_on:
+                    tts.say("voice on")
             elif key == ord('c'):
                 word_buffer = []
+                tts.say("cleared")
                 print("Word cleared.")
             elif key == ord('t'):
                 if serial_client.connected:
@@ -248,6 +264,7 @@ def main():
             elif key == ord('s'):
                 if word_buffer:
                     word = "".join(word_buffer)
+                    tts.speak_word(word)
                     if serial_client.connected:
                         if serial_client.send_word(word):
                             print(f"Sent word '{word}' to ESP32 Braille cell.")
@@ -262,6 +279,7 @@ def main():
                 else:
                     print("Nothing to send — word buffer is empty.")
     finally:
+        tts.stop()
         serial_client.close()
         cap.release()
         cv2.destroyAllWindows()
