@@ -3,155 +3,373 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vision2Braille — Gesture to Braille Dashboard</title>
+  <title>Vision2Braille — Tactile ISL Studio</title>
   <style>
     :root {
-      --bg: #0f1117;
-      --card-bg: #181b24;
-      --card-border: #262a36;
-      --accent: #22c55e;
-      --accent-glow: rgba(34, 197, 94, 0.45);
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
+      --bg: #080b12;
+      --bg-grad: radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08), transparent 40%),
+                 radial-gradient(circle at 85% 10%, rgba(59, 130, 246, 0.09), transparent 42%);
+      --card: rgba(17, 22, 34, 0.86);
+      --card-solid: #121723;
+      --border: rgba(148, 163, 184, 0.14);
+      --border-strong: rgba(148, 163, 184, 0.25);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.48);
+      --blue: #3b82f6;
       --amber: #f59e0b;
       --red: #ef4444;
-      --blue: #3b82f6;
+      --purple: #a855f7;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image: var(--bg-grad);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
+
+    /* Top Bar */
     header {
-      background: #141721;
-      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      background: rgba(11, 15, 25, 0.85);
+      border-bottom: 1px solid var(--border);
       padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
-    header h1 {
-      font-size: 1.25rem;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      display: grid;
+      grid-template-columns: repeat(2, 6px);
+      grid-template-rows: repeat(3, 6px);
+      gap: 3px;
+      place-content: center;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.35);
+    }
+
+    .brand-icon span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .brand-icon span.dim { opacity: 0.25; }
+
+    .brand h1 {
+      font-size: 1.15rem;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand .sub {
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+
+    .hud-pills {
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
-    header .badge {
-      font-size: 0.75rem;
-      padding: 3px 8px;
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 6px 12px;
       border-radius: 999px;
-      background: rgba(59, 130, 246, 0.2);
-      color: var(--blue);
-      border: 1px solid rgba(59, 130, 246, 0.4);
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border);
+      color: var(--text);
     }
-    .container {
+
+    .dot-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    }
+
+    .dot-led.online {
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald-glow);
+    }
+
+    .dot-led.sim {
+      background: var(--amber);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Main Grid */
+    main {
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 20px;
-      padding: 20px 24px;
-      flex: 1;
-      max-width: 1400px;
-      margin: 0 auto;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 18px;
+      padding: 18px 24px 28px;
+      max-width: 1440px;
       width: 100%;
+      margin: 0 auto;
+      flex: 1;
     }
-    @media (max-width: 980px) {
-      .container { grid-template-columns: 1fr; }
+
+    @media (max-width: 1024px) {
+      main { grid-template-columns: 1fr; }
     }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
-    .card-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
+
+    .card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
     }
-    .video-container {
+
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    /* Camera Viewport */
+    .viewport {
       position: relative;
       border-radius: 10px;
       overflow: hidden;
-      background: #000;
+      background: #04060a;
+      border: 1px solid var(--border);
       aspect-ratio: 4 / 3;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .video-container img {
+
+    .viewport img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    .candidate-banner {
+
+    .cam-hud-top {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .cam-tag {
+      background: rgba(8, 11, 18, 0.78);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cam-hud-bottom {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #11141d;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 10px 16px;
+      gap: 12px;
+      background: rgba(8, 11, 18, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 14px;
     }
-    .candidate-val {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: var(--accent);
-      min-width: 40px;
-    }
-    .progress-bar-wrap {
-      width: 100%;
-      height: 8px;
-      background: #232734;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 4px;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      width: 0%;
-      transition: width 0.15s ease-out;
-    }
-    .word-box {
-      font-family: monospace;
-      font-size: 1.6rem;
-      letter-spacing: 2px;
-      padding: 12px;
-      background: #10131c;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      min-height: 54px;
+
+    .pred-display {
       display: flex;
       align-items: center;
-      color: var(--amber);
-      word-break: break-all;
+      gap: 14px;
     }
+
+    .pred-letter {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--emerald);
+      line-height: 1;
+      min-width: 34px;
+      text-align: center;
+    }
+
+    .pred-braille {
+      font-size: 1.9rem;
+      line-height: 1;
+      color: #e2e8f0;
+    }
+
+    .meter-group {
+      flex: 1;
+      max-width: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .meter-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.15s ease-out, background-color 0.2s ease;
+      background: var(--emerald);
+    }
+
+    /* Word Tiles & Sequence Ribbon */
+    .word-tiles {
+      min-height: 68px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #0b0f18;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-hint {
+      color: #64748b;
+      font-size: 0.88rem;
+      padding-left: 6px;
+    }
+
+    .char-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #171e2e;
+      border: 1px solid #2b354d;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .char-tile.rendering-now {
+      border-color: var(--emerald);
+      background: rgba(16, 185, 129, 0.16);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .char-tile.rendered-done {
+      opacity: 0.55;
+    }
+
+    .char-tile .ltr {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--amber);
+    }
+
+    .char-tile.rendering-now .ltr {
+      color: #6ee7b7;
+    }
+
+    .char-tile .brl {
+      font-size: 1.05rem;
+      color: #cbd5e1;
+      line-height: 1.1;
+    }
+
+    .render-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      font-size: 0.8rem;
+      color: #a7f3d0;
+    }
+
+    .render-banner.visible { display: flex; }
+
+    /* Buttons & Inputs */
     .btn-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
+
     button {
-      background: #232838;
+      background: #1d2436;
       color: var(--text);
-      border: 1px solid #363c50;
-      border-radius: 6px;
-      padding: 9px 14px;
-      font-size: 0.85rem;
+      border: 1px solid #303b54;
+      border-radius: 8px;
+      padding: 8px 13px;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s ease;
@@ -159,208 +377,528 @@
       align-items: center;
       gap: 6px;
     }
+
     button:hover {
-      background: #2f364a;
-      border-color: #4b536d;
+      background: #28324a;
+      border-color: #475569;
     }
+
     button.primary {
-      background: #166534;
-      border-color: #22c55e;
-      color: #fff;
+      background: linear-gradient(135deg, #059669, #10b981);
+      border-color: #34d399;
+      color: #022c22;
     }
-    button.primary:hover {
-      background: #15803d;
-    }
+
+    button.primary:hover { filter: brightness(1.08); }
+
     button.danger {
-      background: #7f1d1d;
-      border-color: #ef4444;
+      background: rgba(185, 28, 28, 0.25);
+      border-color: rgba(239, 68, 68, 0.55);
+      color: #fca5a5;
+    }
+
+    button.danger:hover {
+      background: rgba(220, 38, 38, 0.45);
       color: #fff;
     }
-    button.danger:hover {
-      background: #991b1b;
-    }
-    button.toggle-active {
-      background: #065f46;
-      border-color: #10b981;
+
+    button.active-toggle {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: var(--emerald);
       color: #6ee7b7;
     }
-    .braille-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+
+    input[type="text"] {
+      background: #0b0f18;
+      border: 1px solid #2b354d;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--blue);
+    }
+
+    /* Tactile 3D Braille Cell */
+    .hardware-chassis {
+      background: linear-gradient(160deg, #1b2234, #101521);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
       padding: 18px;
-      background: #12151e;
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      gap: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 16px;
+      box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.4);
     }
-    .braille-grid {
+
+    .solenoid-plate {
       display: grid;
-      grid-template-columns: repeat(2, 44px);
-      grid-template-rows: repeat(3, 44px);
-      gap: 14px 28px;
-      padding: 14px 24px;
-      background: #191d29;
-      border: 1px solid #282f42;
-      border-radius: 12px;
+      grid-template-columns: repeat(2, 62px);
+      grid-template-rows: repeat(3, 62px);
+      gap: 16px 28px;
+      padding: 18px 24px;
+      background: #0b0e17;
+      border-radius: 14px;
+      border: 1px solid #242c40;
+      box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.7);
     }
-    .braille-dot {
-      width: 44px;
-      height: 44px;
+
+    .pin-socket {
+      width: 62px;
+      height: 62px;
       border-radius: 50%;
-      background: #252b3b;
-      border: 2px solid #3b445c;
+      background: radial-gradient(circle at 50% 60%, #141926, #07090f);
+      border: 2px solid #252e42;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.75rem;
-      font-weight: bold;
-      color: #64748b;
-      transition: all 0.15s ease;
+      position: relative;
+      box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.85);
     }
-    .braille-dot.active {
-      background: var(--accent);
-      border-color: #fff;
-      color: #052e16;
-      box-shadow: 0 0 16px var(--accent-glow);
-      transform: scale(1.08);
-    }
-    .console {
-      background: #0a0c12;
-      border: 1px solid #1f2433;
-      border-radius: 8px;
-      padding: 10px;
-      font-family: Consolas, monospace;
-      font-size: 0.78rem;
-      height: 140px;
-      overflow-y: auto;
-      color: #94a3b8;
+
+    .pin-plunger {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #475569, #1e293b);
+      border: 2px solid #334155;
       display: flex;
       flex-direction: column;
-      gap: 3px;
-    }
-    .status-pill {
-      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      padding: 4px 10px;
+      justify-content: center;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #94a3b8;
+      transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease, box-shadow 0.15s ease;
+      transform: translateY(2px) scale(0.92);
+    }
+
+    .pin-socket.raised .pin-plunger {
+      background: radial-gradient(circle at 32% 28%, #a7f3d0, #10b981 55%, #047857);
+      border-color: #ecfdf5;
+      color: #022c22;
+      transform: translateY(-5px) scale(1.07);
+      box-shadow: 0 8px 18px rgba(16, 185, 129, 0.55), 0 0 22px rgba(16, 185, 129, 0.45);
+    }
+
+    .pin-gpio {
+      font-size: 0.55rem;
+      opacity: 0.75;
+      font-weight: 600;
+    }
+
+    .cell-readout {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 135px;
+    }
+
+    .cell-big-glyph {
+      font-size: 3.4rem;
+      line-height: 1;
+      color: var(--emerald);
+      text-shadow: 0 0 24px rgba(16, 185, 129, 0.35);
+    }
+
+    .mode-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 9px;
       border-radius: 999px;
-      background: #1a202c;
-      border: 1px solid #2d3748;
+      letter-spacing: 0.06em;
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.4);
     }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--red);
+
+    .mode-badge.hw {
+      background: rgba(16, 185, 129, 0.18);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.45);
     }
-    .status-dot.online {
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent-glow);
+
+    .mode-badge.sim {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+
+    /* Serial Terminal */
+    .terminal {
+      background: #06090f;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.76rem;
+      height: 165px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-line {
+      display: flex;
+      gap: 8px;
+      line-height: 1.35;
+    }
+
+    .log-time { color: #475569; }
+    .log-tag { font-weight: 700; min-width: 34px; }
+    .tag-TX { color: #38bdf8; }
+    .tag-RX { color: #34d399; }
+    .tag-SIM { color: #fbbf24; }
+    .tag-ADD { color: #c084fc; }
+    .tag-SYS { color: #94a3b8; }
+    .log-msg { color: #cbd5e1; word-break: break-word; }
+
+    /* Shortcut Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    kbd {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: monospace;
+      color: #e2e8f0;
+      margin-right: 4px;
+    }
+
+    /* Reference Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(6px);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--card-solid);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      max-width: 780px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .alpha-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+      gap: 10px;
+    }
+
+    .alpha-card {
+      background: #0c101b;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .alpha-card.missing {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.06);
+    }
+
+    .alpha-card .top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .alpha-card .dots {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .alpha-card .status {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.16);
+      color: #6ee7b7;
+    }
+
+    .alpha-card.missing .status {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fcd34d;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>
-      <span>Vision2Braille</span>
-      <span class="badge">ISL to 6-Dot Actuator</span>
-    </h1>
-    <div id="hw-pill" class="status-pill">
-      <span id="hw-indicator" class="status-dot"></span>
-      <span id="hw-status-text">Hardware: Checking...</span>
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">
+        <span></span><span></span>
+        <span></span><span class="dim"></span>
+        <span class="dim"></span><span class="dim"></span>
+      </div>
+      <div>
+        <h1>Vision2Braille Studio</h1>
+        <div class="sub">Indian Sign Language &rarr; 6-Dot Solenoid Braille Actuator</div>
+      </div>
+    </div>
+
+    <div class="hud-pills">
+      <div class="pill">
+        <span id="cam-fps">0.0 FPS</span>
+        <span style="color:#475569;">|</span>
+        <span id="cam-hands">Hands: 0/2</span>
+      </div>
+      <div class="pill">
+        <span id="hw-led" class="dot-led"></span>
+        <span id="hw-status-text">Checking ESP32...</span>
+      </div>
+      <button id="btn-sound" type="button">Sound: OFF</button>
+      <button id="btn-open-ref" type="button">Alphabet &amp; Model Status</button>
     </div>
   </header>
 
-  <div class="container">
-    <!-- Left Column: Video & Word Builder -->
-    <div style="display:flex; flex-direction:column; gap:16px;">
+  <main>
+    <!-- Left Column -->
+    <div class="col">
       <div class="card">
-        <div class="card-title">
-          <span>Camera Stream & Landmark Tracking</span>
-          <span id="conf-badge" style="color:var(--text-muted); font-size:0.75rem;">Confidence: 0%</span>
+        <div class="card-header">
+          <span class="card-title">Live Vision Pipeline</span>
+          <span id="conf-text" style="font-size:0.78rem; color:var(--muted);">Confidence: 0%</span>
         </div>
-        <div class="video-container">
-          <img src="/video_feed" alt="Webcam Feed">
-        </div>
-        <div class="candidate-banner">
-          <div>
-            <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Predicted Sign</div>
-            <div id="candidate-char" class="candidate-val">...</div>
+
+        <div class="viewport">
+          <img src="/video_feed" alt="Live Hand Tracking Feed">
+          <div class="cam-hud-top">
+            <span class="cam-tag" id="hud-hands">Hands: 0</span>
+            <span class="cam-tag" id="hud-fps">0 FPS</span>
           </div>
-          <div style="flex:1; max-width:240px; margin-left:20px;">
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
-              <span>Auto-Add Hold</span>
-              <span id="auto-progress-text">0%</span>
+          <div class="cam-hud-bottom">
+            <div class="pred-display">
+              <div id="candidate-char" class="pred-letter">...</div>
+              <div id="candidate-braille" class="pred-braille">&#x2800;</div>
+              <div id="candidate-dots" style="font-size:0.76rem; color:var(--muted);">No sign held</div>
             </div>
-            <div class="progress-bar-wrap">
-              <div id="auto-progress-bar" class="progress-bar-fill"></div>
+            <div class="meter-group">
+              <div class="meter-labels">
+                <span>Confidence</span>
+                <span id="conf-pct">0%</span>
+              </div>
+              <div class="bar-track">
+                <div id="conf-bar" class="bar-fill"></div>
+              </div>
+              <div class="meter-labels" style="margin-top:4px;">
+                <span>Auto-Add Hold</span>
+                <span id="auto-pct">0%</span>
+              </div>
+              <div class="bar-track">
+                <div id="auto-bar" class="bar-fill" style="background:var(--amber);"></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Word Buffer</div>
-        <div id="word-display" class="word-box">(empty)</div>
+        <div class="card-header">
+          <span class="card-title">Word Composer &amp; Actuation Queue</span>
+          <span style="font-size:0.74rem; color:var(--muted);">1.5s hold / 0.3s gap per letter</span>
+        </div>
+
+        <div id="render-banner" class="render-banner">
+          <span id="render-banner-text">Rendering word...</span>
+          <span id="render-banner-step" style="font-weight:700;"></span>
+        </div>
+
+        <div id="word-tiles" class="word-tiles">
+          <span class="empty-hint">Sign letters and press Space (or enable Auto-Add) to build a word...</span>
+        </div>
+
         <div class="btn-row">
-          <button id="btn-add" class="primary">+ Add Letter</button>
-          <button id="btn-space">+ Space</button>
-          <button id="btn-backspace">&larr; Backspace</button>
-          <button id="btn-clear">Clear</button>
-          <button id="btn-auto">Auto-Add: OFF</button>
-          <button id="btn-send" class="primary" style="margin-left:auto;">&#9654; Send to Braille Cell</button>
+          <button id="btn-add" class="primary" type="button">+ Add Letter</button>
+          <button id="btn-space" type="button">+ Space</button>
+          <button id="btn-backspace" type="button">&larr; Backspace</button>
+          <button id="btn-clear" type="button">Clear</button>
+          <button id="btn-auto" type="button">Auto-Add: OFF</button>
+          <button id="btn-send" class="primary" type="button" style="margin-left:auto;">&#9654; Send to Cell</button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <input id="custom-word-input" type="text" placeholder="Quick test: type any word (e.g. HELLO) and send directly..." style="flex:1;">
+          <button id="btn-send-custom" type="button">Send Custom</button>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: Braille Visualizer & Hardware Controls -->
-    <div style="display:flex; flex-direction:column; gap:16px;">
+    <!-- Right Column -->
+    <div class="col">
       <div class="card">
-        <div class="card-title">
-          <span>Braille Cell Actuator</span>
-          <span id="cell-mode-badge" class="badge">PREVIEW</span>
+        <div class="card-header">
+          <span class="card-title">6-Dot Push Solenoid Cell</span>
+          <span id="cell-mode-badge" class="mode-badge">PREVIEW</span>
         </div>
-        <div class="braille-card">
-          <div style="font-size:0.85rem; color:var(--text-muted);">
-            Active Letter: <strong id="cell-active-letter" style="color:#fff; font-size:1.1rem;">-</strong>
+
+        <div class="hardware-chassis">
+          <div class="solenoid-plate">
+            <div id="socket-1" class="pin-socket">
+              <div class="pin-plunger"><span>1</span><span class="pin-gpio">G13</span></div>
+            </div>
+            <div id="socket-4" class="pin-socket">
+              <div class="pin-plunger"><span>4</span><span class="pin-gpio">G26</span></div>
+            </div>
+            <div id="socket-2" class="pin-socket">
+              <div class="pin-plunger"><span>2</span><span class="pin-gpio">G14</span></div>
+            </div>
+            <div id="socket-5" class="pin-socket">
+              <div class="pin-plunger"><span>5</span><span class="pin-gpio">G25</span></div>
+            </div>
+            <div id="socket-3" class="pin-socket">
+              <div class="pin-plunger"><span>3</span><span class="pin-gpio">G27</span></div>
+            </div>
+            <div id="socket-6" class="pin-socket">
+              <div class="pin-plunger"><span>6</span><span class="pin-gpio">G33</span></div>
+            </div>
           </div>
-          <div class="braille-grid">
-            <div id="dot-1" class="braille-dot">1</div>
-            <div id="dot-4" class="braille-dot">4</div>
-            <div id="dot-2" class="braille-dot">2</div>
-            <div id="dot-5" class="braille-dot">5</div>
-            <div id="dot-3" class="braille-dot">3</div>
-            <div id="dot-6" class="braille-dot">6</div>
-          </div>
-          <div style="font-size:0.75rem; color:var(--text-muted); text-align:center;">
-            Standard 6-Dot Solenoid Layout &bull; Left (1,2,3) &bull; Right (4,5,6)
+
+          <div class="cell-readout">
+            <div>
+              <div style="font-size:0.72rem; color:var(--muted); text-transform:uppercase;">Active Character</div>
+              <div style="display:flex; align-items:baseline; gap:10px; margin-top:4px;">
+                <span id="cell-letter" style="font-size:2.1rem; font-weight:800;">-</span>
+                <span id="cell-glyph" class="cell-big-glyph">&#x2800;</span>
+              </div>
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted);">
+              Raised Pins: <strong id="cell-dots-text" style="color:var(--text);">None</strong>
+            </div>
+            <div style="font-size:0.72rem; color:#64748b; border-top:1px solid var(--border); padding-top:8px;">
+              Driver: ULN2803 (Active-HIGH)<br>
+              Baud: 115200 bps
+            </div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">ESP32 USB Hardware</div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input id="port-input" type="text" placeholder="Auto / COM3" style="background:#10131c; border:1px solid #2f364a; color:#fff; padding:8px 12px; border-radius:6px; flex:1; font-size:0.85rem;">
-          <button id="btn-connect">Connect</button>
+        <div class="card-header">
+          <span class="card-title">ESP32 Hardware Control</span>
+          <span style="font-size:0.72rem; color:#64748b;">USB Serial</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input id="port-input" type="text" placeholder="Auto-detect or COM3..." style="flex:1;">
+          <button id="btn-connect" type="button">Connect / Scan</button>
         </div>
         <div class="btn-row">
-          <button id="btn-test">Pulse Test (1..6)</button>
-          <button id="btn-stop" class="danger">Emergency Stop</button>
+          <button id="btn-test" type="button">Pulse Test (1..6)</button>
+          <button id="btn-ping" type="button">Ping</button>
+          <button id="btn-stop" class="danger" type="button" style="margin-left:auto;">Emergency Stop</button>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Live Serial / Activity Log</div>
-        <div id="console-log" class="console"></div>
+      <div class="card" style="flex:1;">
+        <div class="card-header">
+          <span class="card-title">Serial &amp; Telemetry Log</span>
+          <button id="btn-clear-logs" type="button" style="padding:4px 10px; font-size:0.72rem;">Clear</button>
+        </div>
+        <div id="terminal" class="terminal"></div>
       </div>
+    </div>
+  </main>
+
+  <footer>
+    <span><kbd>Space</kbd> Add Letter</span>
+    <span><kbd>Enter</kbd> Add Space</span>
+    <span><kbd>Backspace</kbd> Undo</span>
+    <span><kbd>A</kbd> Auto-Add</span>
+    <span><kbd>S</kbd> Send Word</span>
+    <span><kbd>T</kbd> Pulse Test</span>
+    <span><kbd>X</kbd> Stop</span>
+  </footer>
+
+  <!-- Alphabet & Model Status Modal -->
+  <div id="ref-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="card-header">
+        <div>
+          <h2 style="font-size:1.1rem;">Grade 1 Braille &amp; Model Coverage (A&ndash;Z)</h2>
+          <p style="font-size:0.78rem; color:var(--muted); margin-top:2px;">
+            Green letters are trained in <code>classifier.pkl</code>. Amber letters still need gesture samples.
+          </p>
+        </div>
+        <button id="btn-close-ref" type="button">Close</button>
+      </div>
+      <div id="alpha-grid" class="alpha-grid"></div>
     </div>
   </div>
 
   <script>
+    const BRAILLE = {
+      A:[1], B:[1,2], C:[1,4], D:[1,4,5], E:[1,5],
+      F:[1,2,4], G:[1,2,4,5], H:[1,2,5], I:[2,4], J:[2,4,5],
+      K:[1,3], L:[1,2,3], M:[1,3,4], N:[1,3,4,5], O:[1,3,5],
+      P:[1,2,3,4], Q:[1,2,3,4,5], R:[1,2,3,5], S:[2,3,4], T:[2,3,4,5],
+      U:[1,3,6], V:[1,2,3,6], W:[2,4,5,6], X:[1,3,4,6], Y:[1,3,4,5,6], Z:[1,3,5,6],
+      " ": []
+    };
+
     const el = id => document.getElementById(id);
+    let soundEnabled = false;
+    let audioCtx = null;
+    let prevCellKey = "";
+
+    function dotsToUnicode(dots) {
+      let mask = 0;
+      for (const d of (dots || [])) {
+        if (d >= 1 && d <= 6) mask |= (1 << (d - 1));
+      }
+      return String.fromCharCode(0x2800 + mask);
+    }
+
+    function playClick(freq = 540) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.065);
+      } catch (_) {}
+    }
 
     async function post(url, data = {}) {
       try {
@@ -375,71 +913,235 @@
       }
     }
 
-    // Keyboard shortcuts
-    window.addEventListener("keydown", e => {
-      if (e.target.tagName === "INPUT") return;
-      if (e.code === "Space") { e.preventDefault(); post("/api/word/add"); }
-      else if (e.code === "Enter") { e.preventDefault(); post("/api/word/space"); }
-      else if (e.code === "Backspace") { e.preventDefault(); post("/api/word/backspace"); }
-      else if (e.key === "a" || e.key === "A") { post("/api/auto_add"); }
-      else if (e.key === "s" || e.key === "S") { post("/api/word/send"); }
-      else if (e.key === "c" || e.key === "C") { post("/api/word/clear"); }
-      else if (e.key === "x" || e.key === "X") { post("/api/hardware/stop"); }
-    });
-
+    // UI Actions
     el("btn-add").onclick = () => post("/api/word/add");
     el("btn-space").onclick = () => post("/api/word/space");
     el("btn-backspace").onclick = () => post("/api/word/backspace");
     el("btn-clear").onclick = () => post("/api/word/clear");
-    el("btn-send").onclick = () => post("/api/word/send");
     el("btn-auto").onclick = () => post("/api/auto_add");
+    el("btn-send").onclick = () => post("/api/word/send");
+    el("btn-send-custom").onclick = () => {
+      const txt = el("custom-word-input").value.trim();
+      if (txt) {
+        post("/api/word/send", { text: txt });
+        el("custom-word-input").value = "";
+      }
+    };
     el("btn-connect").onclick = () => post("/api/hardware/connect", { port: el("port-input").value.trim() });
     el("btn-test").onclick = () => post("/api/hardware/test");
+    el("btn-ping").onclick = () => post("/api/hardware/ping");
     el("btn-stop").onclick = () => post("/api/hardware/stop");
+    el("btn-clear-logs").onclick = () => post("/api/logs/clear");
+
+    el("btn-sound").onclick = () => {
+      soundEnabled = !soundEnabled;
+      el("btn-sound").innerText = soundEnabled ? "Sound: ON" : "Sound: OFF";
+      el("btn-sound").className = soundEnabled ? "active-toggle" : "";
+      if (soundEnabled) playClick(660);
+    };
+
+    el("btn-open-ref").onclick = () => el("ref-modal").classList.add("open");
+    el("btn-close-ref").onclick = () => el("ref-modal").classList.remove("open");
+    el("ref-modal").onclick = e => {
+      if (e.target === el("ref-modal")) el("ref-modal").classList.remove("open");
+    };
+
+    // Keyboard shortcuts
+    window.addEventListener("keydown", e => {
+      if (e.target.tagName === "INPUT") {
+        if (e.code === "Enter" && e.target.id === "custom-word-input") {
+          el("btn-send-custom").click();
+        }
+        return;
+      }
+      if (e.code === "Space") { e.preventDefault(); post("/api/word/add"); }
+      else if (e.code === "Enter") { e.preventDefault(); post("/api/word/space"); }
+      else if (e.code === "Backspace") { e.preventDefault(); post("/api/word/backspace"); }
+      else if (e.key === "a" || e.key === "A") post("/api/auto_add");
+      else if (e.key === "s" || e.key === "S") post("/api/word/send");
+      else if (e.key === "t" || e.key === "T") post("/api/hardware/test");
+      else if (e.key === "x" || e.key === "X") post("/api/hardware/stop");
+      else if (e.key === "Escape") el("ref-modal").classList.remove("open");
+    });
+
+    function renderWordTiles(word, renderingWord, renderingIdx) {
+      const container = el("word-tiles");
+      const banner = el("render-banner");
+      const displayStr = renderingWord || word;
+
+      if (renderingWord) {
+        banner.classList.add("visible");
+        el("render-banner-text").textContent = `Actuating "${renderingWord}"`;
+        el("render-banner-step").textContent =
+          renderingIdx >= 0 ? `Letter ${renderingIdx + 1} / ${renderingWord.length}` : "Starting...";
+      } else {
+        banner.classList.remove("visible");
+      }
+
+      if (!displayStr) {
+        const hint = document.createElement("span");
+        hint.className = "empty-hint";
+        hint.textContent = "Sign letters and press Space (or enable Auto-Add) to build a word...";
+        container.replaceChildren(hint);
+        return;
+      }
+
+      const nodes = [];
+      for (let i = 0; i < displayStr.length; i++) {
+        const ch = displayStr[i];
+        const tile = document.createElement("div");
+        tile.className = "char-tile";
+        if (renderingWord) {
+          if (i === renderingIdx) tile.classList.add("rendering-now");
+          else if (i < renderingIdx) tile.classList.add("rendered-done");
+        }
+
+        const ltr = document.createElement("span");
+        ltr.className = "ltr";
+        ltr.textContent = ch === " " ? "\u2423" : ch;
+
+        const brl = document.createElement("span");
+        brl.className = "brl";
+        brl.textContent = dotsToUnicode(BRAILLE[ch] || []);
+
+        tile.append(ltr, brl);
+        nodes.push(tile);
+      }
+      container.replaceChildren(...nodes);
+    }
+
+    let renderedClassesKey = "";
+    function renderAlphabetModal(classes) {
+      const key = (classes || []).join(",");
+      if (key === renderedClassesKey) return;
+      renderedClassesKey = key;
+
+      const trained = new Set(classes || []);
+      const cards = [];
+      for (const ch of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+        const dots = BRAILLE[ch];
+        const isTrained = trained.has(ch);
+        const card = document.createElement("div");
+        card.className = isTrained ? "alpha-card" : "alpha-card missing";
+
+        const top = document.createElement("div");
+        top.className = "top";
+        top.textContent = `${ch} ${dotsToUnicode(dots)}`;
+
+        const dotsEl = document.createElement("div");
+        dotsEl.className = "dots";
+        dotsEl.textContent = `Dots: ${dots.join(",")}`;
+
+        const badge = document.createElement("span");
+        badge.className = "status";
+        badge.textContent = isTrained ? "Trained" : "Needs Data";
+
+        card.append(top, dotsEl, badge);
+        cards.push(card);
+      }
+      el("alpha-grid").replaceChildren(...cards);
+    }
+
+    function renderLogs(logs) {
+      const term = el("terminal");
+      const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 28;
+      const nodes = (logs || []).map(entry => {
+        const row = document.createElement("div");
+        row.className = "log-line";
+
+        const t = document.createElement("span");
+        t.className = "log-time";
+        t.textContent = entry.time || "";
+
+        const tag = document.createElement("span");
+        tag.className = `log-tag tag-${entry.tag || "SYS"}`;
+        tag.textContent = `[${entry.tag || "SYS"}]`;
+
+        const msg = document.createElement("span");
+        msg.className = "log-msg";
+        msg.textContent = entry.msg || "";
+
+        row.append(t, tag, msg);
+        return row;
+      });
+      term.replaceChildren(...nodes);
+      if (atBottom) term.scrollTop = term.scrollHeight;
+    }
 
     async function pollState() {
       try {
         const res = await fetch("/api/state");
         const s = await res.json();
 
-        el("candidate-char").innerText = s.candidate || "...";
-        el("conf-badge").innerText = `Confidence: ${s.confidence}%`;
-        el("word-display").innerText = s.word || "(empty)";
+        // Telemetry
+        el("cam-fps").textContent = `${s.fps.toFixed(1)} FPS`;
+        el("hud-fps").textContent = `${Math.round(s.fps)} FPS`;
+        el("cam-hands").textContent = `Hands: ${s.hand_count}/2`;
+        el("hud-hands").textContent = `Hands: ${s.hand_count}/2`;
 
-        const autoBtn = el("btn-auto");
-        autoBtn.innerText = s.auto_add ? "Auto-Add: ON" : "Auto-Add: OFF";
-        autoBtn.className = s.auto_add ? "toggle-active" : "";
-        el("auto-progress-bar").style.width = `${s.auto_progress}%`;
-        el("auto-progress-text").innerText = `${s.auto_progress}%`;
-
-        // Hardware status
-        const hwDot = el("hw-indicator");
-        hwDot.className = s.hw_connected ? "status-dot online" : "status-dot";
-        el("hw-status-text").innerText = s.hw_connected ? `Connected (${s.hw_port})` : s.hw_status;
-
-        // Braille Cell
-        el("cell-active-letter").innerText = s.active_letter || "-";
-        el("cell-mode-badge").innerText = s.cell_mode;
-        const activeSet = new Set(s.active_dots || []);
-        for (let i = 1; i <= 6; i++) {
-          const dot = el(`dot-${i}`);
-          dot.className = activeSet.has(i) ? "braille-dot active" : "braille-dot";
+        // Hardware pill
+        const led = el("hw-led");
+        if (s.hw_connected) {
+          led.className = "dot-led online";
+          el("hw-status-text").textContent = `ESP32 Connected (${s.hw_port})`;
+        } else {
+          led.className = "dot-led sim";
+          el("hw-status-text").textContent = s.hw_status;
         }
 
-        // Logs (use textContent to avoid escaping issues with '>' or '<')
-        const logBox = el("console-log");
-        logBox.replaceChildren(...(s.logs || []).map(line => {
-          const item = document.createElement("div");
-          item.textContent = line;
-          return item;
-        }));
-        logBox.scrollTop = logBox.scrollHeight;
-      } catch (e) {
-        // network polling drop
-      }
+        // Candidate + confidence
+        const cand = s.candidate;
+        el("candidate-char").textContent = cand || "...";
+        const candDots = cand ? (BRAILLE[cand] || []) : [];
+        el("candidate-braille").textContent = dotsToUnicode(candDots);
+        el("candidate-dots").textContent = cand ? `Dots ${candDots.join(", ")}` : "No steady sign";
+
+        el("conf-text").textContent = `Confidence: ${s.confidence}%`;
+        el("conf-pct").textContent = `${s.confidence}%`;
+        const confBar = el("conf-bar");
+        confBar.style.width = `${s.confidence}%`;
+        confBar.style.backgroundColor = s.confidence >= 80 ? "var(--emerald)" : (s.confidence >= 60 ? "var(--amber)" : "var(--red)");
+
+        // Auto-add
+        const autoBtn = el("btn-auto");
+        autoBtn.textContent = s.auto_add ? "Auto-Add: ON" : "Auto-Add: OFF";
+        autoBtn.className = s.auto_add ? "active-toggle" : "";
+        el("auto-pct").textContent = `${s.auto_progress}%`;
+        el("auto-bar").style.width = `${s.auto_progress}%`;
+
+        // Word & Sequence
+        renderWordTiles(s.word, s.rendering_word, s.rendering_idx);
+
+        // Solenoid Braille Cell
+        const activeDots = s.active_dots || [];
+        const activeSet = new Set(activeDots);
+        const cellKey = `${s.active_letter}:${activeDots.join(",")}`;
+        if (cellKey !== prevCellKey) {
+          if (activeDots.length > 0 && (s.cell_mode === "HARDWARE" || s.cell_mode === "SIMULATOR")) {
+            playClick(520);
+          }
+          prevCellKey = cellKey;
+        }
+
+        for (let i = 1; i <= 6; i++) {
+          el(`socket-${i}`).className = activeSet.has(i) ? "pin-socket raised" : "pin-socket";
+        }
+        el("cell-letter").textContent = s.active_letter === " " ? "\u2423" : (s.active_letter || "-");
+        el("cell-glyph").textContent = dotsToUnicode(activeDots);
+        el("cell-dots-text").textContent = activeDots.length ? activeDots.join(", ") : "None";
+
+        const badge = el("cell-mode-badge");
+        badge.textContent = s.cell_mode;
+        badge.className = s.cell_mode === "HARDWARE"
+          ? "mode-badge hw"
+          : (s.cell_mode === "SIMULATOR" ? "mode-badge sim" : "mode-badge");
+
+        renderLogs(s.logs);
+        renderAlphabetModal(s.classes);
+      } catch (_) {}
     }
 
-    setInterval(pollState, 150);
+    setInterval(pollState, 120);
     pollState();
   </script>
 </body>
