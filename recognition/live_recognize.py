@@ -1,8 +1,13 @@
+import os
+import pickle
+import sys
+from collections import Counter, deque
+
 import cv2
 import mediapipe as mp
-import pickle
-import os
-from collections import deque, Counter
+
+sys.path.insert(0, os.path.dirname(__file__))
+from features import draw_braille_cell, extract_features, predict_gesture
 
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
@@ -19,78 +24,58 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'model', 'classifier.
 with open(MODEL_PATH, 'rb') as f:
     clf = pickle.load(f)
 
-def extract_features(multi_hand_landmarks, multi_handedness):
-    """
-    Combines up to 2 hands into a fixed 126-length feature vector
-    (42 landmarks x 3 coords). Left hand always occupies the first
-    63 values, right hand the next 63. Missing hand = zeros.
-    """
-    def normalize(hand_landmarks):
-        coords = [(lm.x, lm.y, lm.z) for lm in hand_landmarks.landmark]
-        wrist = coords[0]
-        scale = ((coords[9][0]-wrist[0])**2 + (coords[9][1]-wrist[1])**2) ** 0.5
-        scale = scale if scale > 1e-6 else 1e-6
-        feats = []
-        for (x, y, z) in coords:
-            feats.extend([(x - wrist[0]) / scale, (y - wrist[1]) / scale, z / scale])
-        return feats
-
-    left_feats = [0.0] * 63
-    right_feats = [0.0] * 63
-
-    for hand_landmarks, handedness in zip(multi_hand_landmarks, multi_handedness):
-        label = handedness.classification[0].label  # 'Left' or 'Right'
-        feats = normalize(hand_landmarks)
-        if label == 'Left':
-            left_feats = feats
-        else:
-            right_feats = feats
-
-    return left_feats + right_feats
 
 def main():
     cap = cv2.VideoCapture(0)
     STABILITY_WINDOW = 15   # require consistent prediction across this many frames
     recent_preds = deque(maxlen=STABILITY_WINDOW)
     confirmed_letter = None
+    last_confidence = 0.0
 
-    print("Starting live recognition. Press 'q' to quit.")
+    print("Starting live recognition. Press 'q' or ESC to quit.")
 
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-        frame = cv2.flip(frame, 1)
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(rgb)
+    try:
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
+            frame = cv2.flip(frame, 1)
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = hands.process(rgb)
 
-        current_pred = None
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            features = extract_features(results.multi_hand_landmarks, results.multi_handedness)
-            current_pred = clf.predict([features])[0]
+            current_pred = None
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                features = extract_features(results.multi_hand_landmarks, results.multi_handedness)
+                current_pred, last_confidence, _ = predict_gesture(clf, features)
+            else:
+                last_confidence = 0.0
 
-        recent_preds.append(current_pred)
+            recent_preds.append(current_pred)
 
-        # only accept if the same prediction dominates the recent window
-        if len(recent_preds) == STABILITY_WINDOW:
-            most_common, count = Counter(recent_preds).most_common(1)[0]
-            if most_common is not None and count >= STABILITY_WINDOW * 0.8:
-                if most_common != confirmed_letter:
-                    confirmed_letter = most_common
-                    print(f"Recognized: {confirmed_letter}")
+            if len(recent_preds) == STABILITY_WINDOW:
+                most_common, count = Counter(recent_preds).most_common(1)[0]
+                if most_common is not None and count >= STABILITY_WINDOW * 0.8:
+                    if most_common != confirmed_letter:
+                        confirmed_letter = most_common
+                        print(f"Recognized: {confirmed_letter} ({last_confidence * 100:.0f}%)")
+                elif most_common is None and count >= STABILITY_WINDOW * 0.8:
+                    confirmed_letter = None
 
-        display_text = confirmed_letter if confirmed_letter else "..."
-        cv2.putText(frame, f"Letter: {display_text}", (10, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            display_text = confirmed_letter if confirmed_letter else "..."
+            cv2.putText(frame, f"Letter: {display_text} ({last_confidence * 100:.0f}%)", (10, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
+            draw_braille_cell(frame, confirmed_letter, x=15, y=60, title="DOTS")
 
-        cv2.imshow("Vision2Braille - Live Recognition", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            cv2.imshow("Vision2Braille - Live Recognition", frame)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q') or key == 27:
+                break
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
 
-    cap.release()
-    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
