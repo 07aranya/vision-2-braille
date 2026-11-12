@@ -191,7 +191,8 @@ class DashboardEngine:
                         held = time.monotonic() - self.candidate_since
                         self.auto_progress = min(1.0, held / AUTO_ADD_HOLD_SECS)
                         if held >= AUTO_ADD_HOLD_SECS and self.last_auto_added != self.candidate:
-                            self.word_buffer.append(self.candidate)
+                            for c in self.candidate:
+                                self.word_buffer.append(c)
                             self.last_auto_added = self.candidate
                             self.candidate_since = time.monotonic()
                             self._log("ADD", f"Auto-added '{self.candidate}'")
@@ -244,7 +245,8 @@ class DashboardEngine:
         with self.lock:
             letter = ch or self.candidate
             if letter:
-                self.word_buffer.append(letter)
+                for c in letter:
+                    self.word_buffer.append(c)
                 self._log("ADD", f"Added '{letter}'")
                 return True
             return False

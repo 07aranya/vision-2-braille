@@ -175,7 +175,8 @@ def main():
                 held_time = time.monotonic() - candidate_start_time
                 auto_progress = min(1.0, held_time / AUTO_ADD_HOLD_SECS)
                 if held_time >= AUTO_ADD_HOLD_SECS and last_auto_added != candidate_letter:
-                    word_buffer.append(candidate_letter)
+                    for ch in candidate_letter:
+                        word_buffer.append(ch)
                     last_auto_added = candidate_letter
                     candidate_start_time = time.monotonic()  # reset timer
                     print(f"[AUTO-ADD] Added '{candidate_letter}' -> word: {''.join(word_buffer)}")
@@ -214,9 +215,10 @@ def main():
 
             if key == ord('q') or key == 27:
                 break
-            elif key == 32:  # SPACE -> add letter
+            elif key == 32:  # SPACE -> add letter / word
                 if candidate_letter:
-                    word_buffer.append(candidate_letter)
+                    for ch in candidate_letter:
+                        word_buffer.append(ch)
                     print(f"Added '{candidate_letter}' -> word so far: {''.join(word_buffer)}")
             elif key in (10, 13):  # ENTER -> add space
                 word_buffer.append(' ')

@@ -1,3 +1,4 @@
+import argparse
 import csv
 import os
 import sys
@@ -33,18 +34,29 @@ def load_existing_counts(csv_path):
             reader = csv.reader(f)
             header = next(reader, None)
             for row in reader:
-                if row and row[0] in counts:
-                    counts[row[0]] += 1
+                if row:
+                    lbl = row[0]
+                    counts[lbl] = counts.get(lbl, 0) + 1
     return counts
 
 
-def draw_counter_grid(frame, counts, last_saved_label):
-    # Draw dark semi-transparent sidebar for counts
+def draw_counter_grid(frame, counts, last_saved_label, custom_target=None):
     overlay = frame.copy()
     h, w = frame.shape[:2]
     panel_w = 175
     cv2.rectangle(overlay, (w - panel_w, 0), (w, h), (20, 20, 20), -1)
     cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
+
+    if custom_target:
+        cv2.putText(frame, "TARGET SIGN", (w - panel_w + 10, 22),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+        cnt = counts.get(custom_target, 0)
+        color = (0, 255, 0) if cnt >= 80 else (0, 165, 255)
+        cv2.putText(frame, f"{custom_target}: {cnt}", (w - panel_w + 10, 52),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        cv2.putText(frame, "SPACE/ENTER to cap", (w - panel_w + 10, 80),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+        return
 
     cv2.putText(frame, "SAMPLES (A-Z)", (w - panel_w + 10, 22),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
@@ -53,27 +65,35 @@ def draw_counter_grid(frame, counts, last_saved_label):
     y_start = 42
     line_h = 16
 
-    # 2 columns inside sidebar
     col1 = letters[:13]
     col2 = letters[13:]
 
     for idx, (l1, l2) in enumerate(zip(col1, col2)):
         y = y_start + (idx * line_h)
 
-        c1 = (0, 255, 0) if counts[l1] >= 80 else (0, 165, 255)
+        c1 = (0, 255, 0) if counts.get(l1, 0) >= 80 else (0, 165, 255)
         if l1 == last_saved_label:
             c1 = (255, 255, 0)
-        cv2.putText(frame, f"{l1}:{counts[l1]:3d}", (w - panel_w + 8, y),
+        cv2.putText(frame, f"{l1}:{counts.get(l1, 0):3d}", (w - panel_w + 8, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.42, c1, 1)
 
-        c2 = (0, 255, 0) if counts[l2] >= 80 else (0, 165, 255)
+        c2 = (0, 255, 0) if counts.get(l2, 0) >= 80 else (0, 165, 255)
         if l2 == last_saved_label:
             c2 = (255, 255, 0)
-        cv2.putText(frame, f"{l2}:{counts[l2]:3d}", (w - panel_w + 90, y),
+        cv2.putText(frame, f"{l2}:{counts.get(l2, 0):3d}", (w - panel_w + 90, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.42, c2, 1)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Vision2Braille Gesture Collector")
+    parser.add_argument("--label", help="Target specific letter or custom word sign (e.g. --label HELLO or --label D)")
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+    custom_target = args.label.strip().upper() if args.label else None
+
     cap = cv2.VideoCapture(0)
     os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
     file_exists = os.path.isfile(CSV_PATH)
@@ -88,7 +108,12 @@ def main():
             writer.writerow(header)
 
         print("Vision2Braille Gesture Collector")
-        print("  - Press ANY letter key A-Z to save a sample (both 'q' and 'w' now work!)")
+        if custom_target:
+            print(f"  - Dedicated capture mode for sign: '{custom_target}'")
+            print("  - Press [SPACE] or [ENTER] to save a sample.")
+        else:
+            print("  - Standard alphabet mode: press any key A-Z to save a sample.")
+            print("  - (To record a full word sign, run: python collect_gestures.py --label WORD)")
         print("  - Press [ESC] to quit.")
         print(f"Current total samples: {sum(counts.values())}")
 
@@ -106,36 +131,43 @@ def main():
                 for hand_landmarks in results.multi_hand_landmarks:
                     mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # Draw status on the left
             status_text = f"Hands: {hand_count}/2"
             cv2.putText(frame, status_text, (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0) if hand_count > 0 else (0, 0, 255), 2)
-            cv2.putText(frame, "Press A-Z to capture | ESC to quit", (10, frame.shape[0] - 15),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+
+            bottom_prompt = f"Sign '{custom_target}' & press SPACE/ENTER | ESC to quit" if custom_target else "Press A-Z to capture | ESC to quit"
+            cv2.putText(frame, bottom_prompt, (10, frame.shape[0] - 15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.48, (220, 220, 220), 1)
 
             if last_saved_label:
                 cv2.putText(frame, f"Saved: {last_saved_label} (#{counts[last_saved_label]})",
                             (10, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
-            # Draw 2-column sidebar counters
-            draw_counter_grid(frame, counts, last_saved_label)
+            draw_counter_grid(frame, counts, last_saved_label, custom_target)
 
             cv2.imshow("Data Collection - Vision2Braille", frame)
             key = cv2.waitKey(1) & 0xFF
 
-            if key == 27:  # ESC key to quit safely without colliding with 'q'
+            if key == 27:  # ESC to quit
                 break
+
+            target_label = None
+            if custom_target:
+                if key in (32, 10, 13):  # SPACE or ENTER
+                    target_label = custom_target
             elif key in KEY_TO_LABEL:
+                target_label = KEY_TO_LABEL[key]
+
+            if target_label:
                 if results.multi_hand_landmarks:
-                    label = KEY_TO_LABEL[key]
                     features = extract_features(results.multi_hand_landmarks, results.multi_handedness)
-                    writer.writerow([label] + features)
+                    writer.writerow([target_label] + features)
                     f.flush()
-                    counts[label] += 1
-                    last_saved_label = label
-                    print(f"Saved sample for '{label}' (total: {counts[label]})")
+                    counts[target_label] = counts.get(target_label, 0) + 1
+                    last_saved_label = target_label
+                    print(f"Saved sample for '{target_label}' (total: {counts[target_label]})")
                 else:
-                    print("No hand detected — cannot capture sample.")
+                    print("No hand detected — position your hands before pressing capture.")
 
     cap.release()
     cv2.destroyAllWindows()
